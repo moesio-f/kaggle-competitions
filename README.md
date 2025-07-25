@@ -38,4 +38,4 @@ Every competition directory is self-contained, and might use different Python/li
 
 | Competition | Status | Final Submission |
 | --- | --- | --- |
-| [Predict the Introverts from the Extroverts](./Predict the Introverts from the Extroverts) | Ongoing | |
+| [Predict the Introverts from the Extroverts](./Predict%20the%20Introverts%20from%20the%20Extroverts) | Ongoing | |

@@ -15,4 +15,4 @@ classifiers = [
     "Programming Language :: Python :: 3.10",
 ]
 keywords = [ "linear algebra", "vector", "matrix", "c", "ctypes", "cuda", "gpu" ]
-dependencies = ["pandas>=2.3.1", "numpy>=2.2.0", "plotly>=6.2.0"]
+dependencies = ["pandas>=2.3.1", "numpy>=2.2.0", "plotly>=6.2.0", "kaleido>=1.0.0"]

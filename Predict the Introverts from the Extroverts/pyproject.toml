@@ -1,0 +1,18 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "playground_series_s5e7"
+version = "1.0.0"
+readme = "README.md"
+description = "Source code for Kaggle's 'Predict the Introverts from the Extroverts' competition."
+requires-python = ">=3.10"
+classifiers = [
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.10",
+]
+keywords = [ "linear algebra", "vector", "matrix", "c", "ctypes", "cuda", "gpu" ]
+dependencies = ["pandas>=2.3.1", "numpy>=2.2.0", "plotly>=6.2.0"]

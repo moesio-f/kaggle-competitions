@@ -45,3 +45,4 @@ venv.bak/
 *.csv
 *.parquet
 *.json
+*.joblib

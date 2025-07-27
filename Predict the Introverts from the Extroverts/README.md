@@ -30,9 +30,6 @@
         - `feature_engineering`: feature engineering strategies;
         - `training`: model training and tuning;
         - `inference`: model retrieval and inference;
-        - `fallback`: model-agnostic decision logic;
-        - `api`: wrapper for an API for model serving;
-            - RESTFul API and SDK;
 
 ## Structure
 
@@ -43,3 +40,4 @@
     - [`competition`](./data/competition): competition data;
     - [`prototype`](./data/prototype): data used for prototype evaluation (i.e., notebooks);
     - [`processed`](./data/processed): training data used for the model (versioned by `v1`, `v2`, etc);
+- [`models`](./models): model saving directory;

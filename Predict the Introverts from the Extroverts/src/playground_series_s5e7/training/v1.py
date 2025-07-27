@@ -8,6 +8,7 @@ import optuna
 import pandas as pd
 import pandera.pandas as pa
 from pandera.typing.pandas import DataFrame
+from sklearn.decomposition import PCA
 from sklearn.metrics import accuracy_score as acc_score
 from sklearn.svm import SVC
 
@@ -32,6 +33,7 @@ class ScoredModel:
     shrinking: bool
     class_weight: str | dict | None
     random_state: int
+    remove_train_outliers: bool
     degree: int = 3
     gamma: str = "scale"
     coef0: float = 0.0
@@ -51,7 +53,29 @@ def train_model(
     shrinking: bool = True,
     class_weight: str | dict | None = None,
     random_state: int | None = None,
+    remove_train_outliers: bool = True,
 ) -> SVC:
+    # Don't change the DataFrame in-place
+    train = train.copy()
+
+    if remove_train_outliers:
+        # Fit PCA to data
+        pca = (
+            PCA(n_components=2)
+            .fit_transform(train.drop(columns=["id", "personality"]))
+            .T
+        )
+
+        # Normalize first dimension to [0, 1]
+        train["X_0"] = (pca[0] + 1) / 2
+
+        # Flip outliers cases (see EDA)
+        introvert_like_extrovert = (train.X_0 < 0.375) & (train.personality == 1)
+        extrovert_like_introvert = (train.X_0 > 0.375) & (train.personality == 0)
+        train.loc[introvert_like_extrovert, "personality"] = 1
+        train.loc[extrovert_like_introvert, "personality"] = 0
+
+    # Train model
     X = train[_FEATURES_COLUMNS].values
     y = train.personality.values
     model = SVC(
@@ -88,13 +112,14 @@ def train_holdout_finetuned(
     seed: int,
     n_trials: int = 100,
     train_best_model_on_full: bool = True,
-    C_space: tuple[float, float] = (1e-3, 1e1),
+    C_space: tuple[float, float] = (1e-3, 5e1),
     kernel_choices: tuple[str] = ("linear", "poly", "rbf", "sigmoid"),
     degree_space: tuple[int, int] = (1, 3),
     gamma_choices: tuple[str | float] = ("scale", "auto"),
-    coef0_space: tuple[float, float] = (0.0, 2e1),
-    shrinking_choices: tuple[bool] = (True, False),
+    coef0_space: tuple[float, float] = (0.0, 5e1),
+    shrinking_choices: tuple[bool, bool] = (True, False),
     class_weight_choices: tuple[dict | str | None] = ("balanced", None),
+    remove_train_outliers_choices: tuple[bool, bool] = (True, False),
 ) -> ScoredModel:
     """Return a fine-tuned model using a hold-out evaluation
     to infer performance.
@@ -133,6 +158,9 @@ def train_holdout_finetuned(
         shrinking = trial.suggest_categorical("shrinking", shrinking_choices)
         kernel = trial.suggest_categorical("kernel", kernel_choices)
         class_weight = trial.suggest_categorical("class_weight", class_weight_choices)
+        remove_train_outliers = trial.suggest_categorical(
+            "remove_train_outliers", remove_train_outliers_choices
+        )
 
         # Conditions for other values
         is_poly = kernel == "poly"
@@ -160,6 +188,7 @@ def train_holdout_finetuned(
             coef0=coef0,
             shrinking=shrinking,
             class_weight=class_weight,
+            remove_train_outliers=remove_train_outliers,
         )
         LOGGER.info("Training model with parameters: %s", params)
         model = train_model(

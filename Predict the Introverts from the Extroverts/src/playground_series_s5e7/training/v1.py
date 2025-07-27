@@ -54,6 +54,7 @@ def train_model(
     class_weight: str | dict | None = None,
     random_state: int | None = None,
     remove_train_outliers: bool = True,
+    max_iter: int = int(1e5),
 ) -> SVC:
     # Don't change the DataFrame in-place
     train = train.copy()
@@ -87,6 +88,7 @@ def train_model(
         shrinking=shrinking,
         class_weight=class_weight,
         random_state=random_state,
+        max_iter=max_iter,
     )
     model.fit(X, y)
     return model

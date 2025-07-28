@@ -203,10 +203,14 @@ def run_inference(df: Path, statistics: Path, model: Path, output_file: Path):
     # Model prediction
     LOGGER.info("Running predictions...")
     preds = model.predict(df)
-    preds = preds[["id", "personality"]].rename(columns={"personality": "target"})
+    preds = preds[
+        [schemas.EngineeredTarget.id, schemas.EngineeredTarget.personality]
+    ].rename(columns={"personality": "target"})
 
     # Inverse map personality
-    preds["personality"] = preds["target"].map({1: "Extrovert", 0: "Introvert"})
+    preds[schemas.EngineeredTarget.personality] = preds["target"].map(
+        {1: "Extrovert", 0: "Introvert"}
+    )
     preds = preds.drop(columns="target")
 
     # Save predictions

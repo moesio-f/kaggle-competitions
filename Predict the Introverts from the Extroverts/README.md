@@ -21,8 +21,8 @@
 # Prepare train data
 pg_s5e7 prepare_train_data --source ./data/competition/train.csv --output ./data/processed/v1
 
-# Fine-tune model (~10min)
-pg_s5e7 train_finetuned_model --train ./data/processed/v1/train.parquet --test ./data/processed/v1/test.parquet --output models/1000_trials --trials 1000 --seed 12
+# Fine-tune model (~20-30 min)
+pg_s5e7 train_finetuned_model --train ./data/processed/v1/train.parquet --test ./data/processed/v1/test.parquet --output models/1000_trials --trials 1000 --seed 128
 
 # Run inference on competition test set
 pg_s5e7 run_inference --df ./data/competition/test.csv --statistics ./data/processed/v1/train_statistics.json --model ./models/1000_trials --output-file ./data/competition/submission.csv

@@ -1,32 +1,30 @@
-"""v1 SVM for classification."""
+"""Model training for classification."""
 
 import logging
 from dataclasses import asdict, dataclass
+from typing import TypeAlias, Union
 
 import numpy as np
 import optuna
 import pandas as pd
 import pandera.pandas as pa
 from pandera.typing.pandas import DataFrame
+from sklearn.base import ClassifierMixin, RegressorMixin
 from sklearn.decomposition import PCA
 from sklearn.metrics import accuracy_score as acc_score
 from sklearn.svm import SVC
 
-from playground_series_s5e7.schemas import V1Target
+from playground_series_s5e7.schemas import EngineeredTarget, Meta
 
 LOGGER = logging.getLogger(__name__)
-_FEATURES_COLUMNS: list[str] = [
-    "time_spent_alone",
-    "social_event_attendance",
-    "going_outside",
-    "friends_circle_size",
-    "post_frequency",
-]
+
+
+SkModel: TypeAlias = Union[ClassifierMixin, RegressorMixin]
 
 
 @dataclass(frozen=True)
 class ScoredModel:
-    model: SVC
+    model: SkModel
     accuracy: float
     C: float
     kernel: str
@@ -42,9 +40,9 @@ class ScoredModel:
         return asdict(self)
 
 
-@pa.check_input(V1Target)
+@pa.check_input(EngineeredTarget)
 def train_model(
-    train: DataFrame[V1Target],
+    train: DataFrame[EngineeredTarget],
     C: float = 1.0,
     kernel: str = "rbf",
     degree: int = 3,
@@ -54,8 +52,8 @@ def train_model(
     class_weight: str | dict | None = None,
     random_state: int | None = None,
     remove_train_outliers: bool = True,
-    max_iter: int = int(1e5),
-) -> SVC:
+    max_iter: int = int(1e6),
+) -> SkModel:
     # Don't change the DataFrame in-place
     train = train.copy()
 
@@ -63,7 +61,9 @@ def train_model(
         # Fit PCA to data
         pca = (
             PCA(n_components=2)
-            .fit_transform(train.drop(columns=["id", "personality"]))
+            .fit_transform(
+                train.drop(columns=[EngineeredTarget.id, EngineeredTarget.personality])
+            )
             .T
         )
 
@@ -71,14 +71,18 @@ def train_model(
         train["X_0"] = (pca[0] + 1) / 2
 
         # Flip outliers cases (see EDA)
-        introvert_like_extrovert = (train.X_0 < 0.375) & (train.personality == 1)
-        extrovert_like_introvert = (train.X_0 > 0.375) & (train.personality == 0)
-        train.loc[introvert_like_extrovert, "personality"] = 1
-        train.loc[extrovert_like_introvert, "personality"] = 0
+        extrovert_like_introvert = (train.X_0 < 0.375) & (
+            train[EngineeredTarget.personality] == 1
+        )
+        introvert_like_extrovert = (train.X_0 > 0.375) & (
+            train[EngineeredTarget.personality] == 0
+        )
+        train.loc[introvert_like_extrovert, EngineeredTarget.personality] = 1
+        train.loc[extrovert_like_introvert, EngineeredTarget.personality] = 0
 
     # Train model
-    X = train[_FEATURES_COLUMNS].values
-    y = train.personality.values
+    X = train[Meta.EngineeredTarget.FEATURES_COLUMNS].values
+    y = train[EngineeredTarget.personality].values
     model = SVC(
         C=C,
         kernel=kernel,
@@ -94,8 +98,8 @@ def train_model(
     return model
 
 
-@pa.check_input(V1Target, "test")
-def accuracy_score(model: SVC, test: DataFrame[V1Target]) -> float:
+@pa.check_input(EngineeredTarget, "test")
+def accuracy_score(model: SVC, test: DataFrame[EngineeredTarget]) -> float:
     """Compute the accuracy score. The model is assumed
     to come from `train_model` or `train_holdout_finetuned`.
 
@@ -103,20 +107,23 @@ def accuracy_score(model: SVC, test: DataFrame[V1Target]) -> float:
     :param test: test DataFrame.
     :return: accuracy.
     """
-    return acc_score(test.personality, model.predict(test[_FEATURES_COLUMNS].values))
+    return acc_score(
+        test.personality,
+        model.predict(test[Meta.EngineeredTarget.FEATURES_COLUMNS].values),
+    )
 
 
-@pa.check_input(V1Target, "train")
-@pa.check_input(V1Target, "test")
+@pa.check_input(EngineeredTarget, "train")
+@pa.check_input(EngineeredTarget, "test")
 def train_holdout_finetuned(
-    train: DataFrame[V1Target],
-    test: DataFrame[V1Target],
+    train: DataFrame[EngineeredTarget],
+    test: DataFrame[EngineeredTarget],
     seed: int,
     n_trials: int = 100,
     train_best_model_on_full: bool = True,
     C_space: tuple[float, float] = (1e-3, 5e1),
     kernel_choices: tuple[str] = ("linear", "poly", "rbf", "sigmoid"),
-    degree_space: tuple[int, int] = (1, 3),
+    degree_space: tuple[int, int] = (1, len(Meta.EngineeredFeatures.FEATURES_COLUMNS)),
     gamma_choices: tuple[str | float] = ("scale", "auto"),
     coef0_space: tuple[float, float] = (0.0, 5e1),
     shrinking_choices: tuple[bool, bool] = (True, False),
@@ -148,6 +155,11 @@ def train_holdout_finetuned(
     rng = np.random.default_rng(seed)
 
     def gen_seed() -> int:
+        """Generate a random seed from the
+        outer scope RNG.
+
+        :return: random seed.
+        """
         return rng.integers(low=0, high=99999).item()
 
     def objective(trial: optuna.Trial) -> float:
@@ -199,6 +211,8 @@ def train_holdout_finetuned(
             random_state=random_state,
         )
         score = accuracy_score(model, test)
+
+        # Required to train the same model
         trial.set_user_attr("random_state", random_state)
         return score
 

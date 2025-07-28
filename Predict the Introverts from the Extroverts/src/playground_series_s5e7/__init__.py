@@ -4,22 +4,21 @@ from logging import config
 LOGGING_CONFIG = {
     "version": 1,
     "formatters": {
-        "standard": {"format": "[%(name)s][%(funcName)s]: %(message)s"},
+        "rich_fmt": {"format": "[%(name)s][%(funcName)s]: %(message)s"},
     },
     "handlers": {
-        "default": {
+        "rich": {
             "level": "DEBUG",
-            "formatter": "standard",
+            "formatter": "rich_fmt",
             "omit_repeated_times": False,
             "show_path": False,
             "class": "rich.logging.RichHandler",
         },
     },
     "loggers": {
-        "playground_series_s5e7": {
-            "handlers": ["default"],
+        "": {
+            "handlers": ["rich"],
             "level": "DEBUG",
-            "propagate": False,
         },
     },
 }

@@ -1,6 +1,7 @@
 """DataFrame models and schemas."""
 
 from dataclasses import asdict, dataclass
+from typing import ClassVar
 
 import pandas as pd
 import pandera.pandas as pa
@@ -76,8 +77,8 @@ class RawTarget(FeaturesBase):
     )
 
 
-class V1Features(pa.DataFrameModel):
-    """V1 feature engineering."""
+class EngineeredFeatures(pa.DataFrameModel):
+    """Engineered features."""
 
     id: Series[pa.dtypes.Int32] = pa.Field(
         ge=0, nullable=False, unique=True, description="Unique identifier."
@@ -115,7 +116,7 @@ class V1Features(pa.DataFrameModel):
 
 
 @dataclass(frozen=True)
-class V1FeaturesStatistics:
+class EngineeredStatistics:
     """Statistics about the min-max normalized samples.
 
     :param count: total number of samples.
@@ -139,8 +140,8 @@ class V1FeaturesStatistics:
         return asdict(self)
 
 
-class V1Target(V1Features):
-    """V1 feature engineered features with target."""
+class EngineeredTarget(EngineeredFeatures):
+    """Engineered features with target."""
 
     personality: Series[pa.dtypes.Int8] = pa.Field(
         nullable=False,
@@ -148,3 +149,49 @@ class V1Target(V1Features):
         isin=[0, 1],
         coerce=True,
     )
+
+
+class Meta:
+    """Meta information about schemas.
+
+    Allows the user to read group of related variables
+    with a single name.
+    """
+
+    class FeaturesBase:
+        FEATURES_COLUMNS: ClassVar[list[str]] = [
+            FeaturesBase.time_spent_alone,
+            FeaturesBase.stage_fear,
+            FeaturesBase.social_event_attendance,
+            FeaturesBase.going_outside,
+            FeaturesBase.drained_after_socializing,
+            FeaturesBase.friends_circle_size,
+            FeaturesBase.post_frequency,
+        ]
+
+        CATEGORICAL_FEATURES_COLUMNS: ClassVar[list[str]] = [
+            FeaturesBase.stage_fear,
+            FeaturesBase.drained_after_socializing,
+        ]
+
+    class RawTarget(FeaturesBase):
+        pass
+
+    class EngineeredFeatures:
+        FEATURES_COLUMNS: ClassVar[list[str]] = [
+            EngineeredFeatures.time_spent_alone,
+            EngineeredFeatures.social_event_attendance,
+            EngineeredFeatures.going_outside,
+            EngineeredFeatures.friends_circle_size,
+            EngineeredFeatures.post_frequency,
+        ]
+
+        FEATURES_MIN_MAX: ClassVar[list[str, tuple[int, int]]] = list(
+            zip(
+                FEATURES_COLUMNS,
+                [(0, 11), (0, 11), (0, 7), (0, 15), (0, 10)],
+            )
+        )
+
+    class EngineeredTarget(EngineeredFeatures):
+        pass

@@ -10,10 +10,7 @@ import click
 import joblib
 import pandas as pd
 
-from . import schemas
-from .feature_engineering import v1 as fe_v1
-from .inference import v1 as inference_v1
-from .training import v1 as train_v1
+from . import feature_engineering, inference, schemas, training
 
 LOGGER = logging.getLogger(__name__)
 
@@ -50,7 +47,7 @@ def prepare_train_data(source: Path, output: Path, frac: float, seed: int):
     LOGGER.info("Loaded raw data: %d samples, %d columns.", len(raw), len(raw.columns))
 
     LOGGER.info("Preparing train/test data...")
-    train, test, statistics = fe_v1.prepare_train_data(raw, frac, seed)
+    train, test, statistics = feature_engineering.prepare_train_data(raw, frac, seed)
     LOGGER.info(
         "Data prepared. Train has %d samples, test has %d samples.",
         len(train),
@@ -94,12 +91,12 @@ def process_batch(source: Path, statistics: Path, output_file: Path):
 
     LOGGER.info("Loading sources...")
     with statistics.open("r") as f:
-        statistics = schemas.V1FeaturesStatistics(**json.load(f))
+        statistics = schemas.EngineeredStatistics(**json.load(f))
     df = schemas.FeaturesBase.validate(pd.read_csv(source).rename(columns=str.lower))
     LOGGER.info("Sources loaded. DataFrame has %d samples.", len(df))
 
     LOGGER.info("Processing batch...")
-    df = fe_v1.process_batch(df, statistics)
+    df = feature_engineering.process_batch(df, statistics)
     df.to_parquet(output_file)
     LOGGER.info("Batch processed and saved to '%s'.", output_file)
 
@@ -141,7 +138,7 @@ def train_finetuned_model(
 
     LOGGER.info("Starting model fine-tuning...")
     train_best_model_on_full = not disable_best_model_train_on_full
-    model = train_v1.train_holdout_finetuned(
+    model = training.train_holdout_finetuned(
         train,
         test,
         seed=seed,
@@ -189,9 +186,9 @@ def run_inference(df: Path, statistics: Path, model: Path, output_file: Path):
     # Loading
     LOGGER.info("Loading sources...")
     with statistics.open("r") as f:
-        statistics = schemas.V1FeaturesStatistics(**json.load(f))
+        statistics = schemas.EngineeredStatistics(**json.load(f))
     df = schemas.FeaturesBase.validate(pd.read_csv(df).rename(columns=str.lower))
-    model = inference_v1.ModelV1(model)
+    model = inference.Model(model)
     LOGGER.info(
         "Sources loaded. DataFrame has %d samples. Model had %.3f ACC in training.",
         len(df),
@@ -200,7 +197,7 @@ def run_inference(df: Path, statistics: Path, model: Path, output_file: Path):
 
     # Online feature engineering
     LOGGER.info("Running online feature engineering...")
-    df = fe_v1.process_batch(df, statistics)
+    df = feature_engineering.process_batch(df, statistics)
     LOGGER.info("Data is ready for inference.")
 
     # Model prediction

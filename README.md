@@ -40,5 +40,5 @@ Every competition directory is self-contained, and might use different Python/li
 
 | Competition | Status | Public LB | Private LB | Rank #1 |
 | --- | --- | --- | --- | --- |
-| [Predict the Introverts from the Extroverts](./Predict%20the%20Introverts%20from%20the%20Extroverts) | `0.973279` | _TBA_ | `0.977327` (Public LB) |
+| [Predict the Introverts from the Extroverts](./Predict%20the%20Introverts%20from%20the%20Extroverts) | Ongoing | `0.973279` | _TBA_ | `0.977327` (Public LB) |
 | NeurIPS - Ariel Data Challenge 2025 | Ongoing | | _TBA_ | `0.485` (Public LB) |

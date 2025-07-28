@@ -11,6 +11,22 @@
 - Team Merger Deadline - Same as the Final Submission Deadline
 - Final Submission Deadline - July 31, 2025
 
+## How to run?
+
+1. Install the package with `uv pip install -e .`;
+2. Download the competition data and put it into [`data/raw`](./data/raw);
+3. Use the CLI `pg_s5e7` to interact with the solution:
+
+```bash
+# Prepare train data
+pg_s5e7 prepare_train_data --source ./data/competition/train.csv --output ./data/processed/v1
+
+# Fine-tune model (~10min)
+pg_s5e7 train_finetuned_model --train ./data/processed/v1/train.parquet --test ./data/processed/v1/test.parquet --output models/1000_trials --trials 1000 --seed 12
+
+# Run inference on competition test set
+pg_s5e7 run_inference --df ./data/competition/test.csv --statistics ./data/processed/v1/train_statistics.json --model ./models/1000_trials --output-file ./data/competition/submission.csv
+```
 
 ## Process & Methodology
 
@@ -26,6 +42,7 @@
     - The final decision is to move forward with **SVM**, due to the expectation that it should be easier to tune, and it allows for easy retraining while keeping the hardware requirements "constant" (i.e., if 10k+ more samples become available KNN memory consumption would grow);
 4. **Development**: improve solution (i.e., feature engineering), and make simple API for model serving;
     - The final solution is available at [`playground_series_s5e7`](./src/playground_series_s5e7);
+    - Additional notebooks have been made to investigate outliers/"bad samples";
     - The package has the following structure:
         - `feature_engineering`: feature engineering strategies;
         - `training`: model training and tuning;

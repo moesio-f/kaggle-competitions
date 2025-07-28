@@ -40,8 +40,9 @@ def prepare_train_data(
 
     # Min-max normalization
     for col, (min, max) in Meta.EngineeredFeatures.FEATURES_MIN_MAX:
+        df[col] = df[col].astype("float32")
         s = (df[col] - min) / (max - min)
-        df.loc[:, col] = s.astype("float32")
+        df.loc[:, col] = s
 
     # Train and test sets
     train = df.sample(frac=frac_train, random_state=seed)
@@ -56,7 +57,7 @@ def prepare_train_data(
     stats = EngineeredStatistics(**stats)
 
     # Data imputation
-    for col in EngineeredFeatures.FEATURES_COLUMNS:
+    for col in Meta.EngineeredFeatures.FEATURES_COLUMNS:
         fill_value = getattr(stats, f"mean_{col}")
         train.loc[:, col] = train[col].fillna(value=fill_value)
         test.loc[:, col] = test[col].fillna(value=fill_value)

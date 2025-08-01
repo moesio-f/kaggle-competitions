@@ -38,7 +38,8 @@ Every competition directory is self-contained, and might use different Python/li
 
 ## Competitions List
 
-| Competition | Status | Public LB | Private LB | Rank #1 |
-| --- | --- | --- | --- | --- |
-| [Predict the Introverts from the Extroverts](./Predict%20the%20Introverts%20from%20the%20Extroverts) | Ongoing | `0.973279` | _TBA_ | `0.977327` (Public LB) |
-| NeurIPS - Ariel Data Challenge 2025 | Ongoing | | _TBA_ | `0.485` (Public LB) |
+| Competition | Status | Public LB | Private LB | Rank #1 | %Change |
+| --- | --- | --- | --- | --- | --- |
+| [Predict the Introverts from the Extroverts](./Predict%20the%20Introverts%20from%20the%20Extroverts) | Closed | `0.973279` | `0.967813` | `0.970647` | `-0.292%` |
+| Binary Classification with a Bank Dataset | Ongoing | _TBA_ | _TBA_ | _TBA_ | _TBA_ | _TBA_ |
+| NeurIPS - Ariel Data Challenge 2025 | Ongoing | _TBA_ | _TBA_ | _TBA_ | _TBA_ | _TBA_ |
